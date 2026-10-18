@@ -1,0 +1,64 @@
+name: Rolling
+
+# Run scheduled jobs on a nightly basis, as crate may break independently of any given PR.
+on:
+  schedule:
+    - cron: "7 7 * * *"
+  workflow_dispatch:
+  # Also validate this workflow when it is itself edited.
+  pull_request:
+    paths: [".github/workflows/scheduled.yml"]
+
+# Grant no permissions by default. Jobs opt into what they need.
+# See https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication
+permissions: {}
+
+# Cancel outdated runs for the same PR or branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  # Checks that changes in nightly does not break this crate.
+  nightly:
+    name: Test nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: nightly
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo generate-lockfile
+        if: hashFiles('Cargo.lock') == ''
+      - run: cargo test --locked --all-features --all-targets
+      - run: cargo test --locked --all-features --doc
+
+  # Checks that updating the dependencies of this crate to the latest available that
+  # satisfy the versions in Cargo.toml does not break this crate.
+  updated:
+    name: Test updated dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo update
+      - run: cargo test --locked --all-features --all-targets
+        env:
+          # Surface deprecations introduced by the newer dependencies.
+          RUSTFLAGS: -Dwarnings
+      - run: cargo test --locked --all-features --doc

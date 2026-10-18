@@ -1,0 +1,34 @@
+# Dependabot configuration:
+# https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+
+version: 2
+updates:
+  # GitHub Actions dependencies.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Group routine patch and minor updates into one PR.
+    groups:
+      github-actions-dependencies:
+        update-types:
+          - "patch"
+          - "minor"
+    # Limit the number of open version update PRs.
+    open-pull-requests-limit: 3
+
+  # Cargo dependencies.
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Only major bumps are worth a PR.
+    # Remove this block if the package ships binaries, where the committed
+    # lockfile is what users actually get.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+    # Limit the number of open version update PRs.
+    open-pull-requests-limit: 3

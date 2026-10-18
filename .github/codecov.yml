@@ -1,0 +1,23 @@
+# Codecov configuration:
+# https://docs.codecov.com/docs/codecovyml-reference
+
+coverage:
+  # Use 85% and 100% as the red/yellow and yellow/green boundaries.
+  range: "85..100"
+  # Display coverage to one decimal place, rounding down.
+  round: down
+  precision: 1
+  status:
+    project:
+      default:
+        # Allow project coverage to drop by up to 1%.
+        threshold: 1%
+# Exclude non-production code from coverage calculations.
+ignore:
+  - "tests"
+  - "examples"
+  - "benches"
+# Show file-level changes only when coverage changes.
+comment:
+  layout: "files"
+  require_changes: true
