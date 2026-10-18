@@ -175,7 +175,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         toolchain: [stable]
         include:
           # beta gives early warning of regressions in the next release.

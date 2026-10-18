@@ -1,11 +1,7 @@
-use std::{
-    cell::UnsafeCell,
-    ops::{Deref, DerefMut},
-    sync::atomic::{
-        AtomicBool,
-        Ordering::{Acquire, Release},
-    },
-};
+use std::cell::UnsafeCell;
+use std::ops::{Deref, DerefMut};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::{Acquire, Release};
 
 /// Test-and-Test-and-Set (TaTaS) spinlock.
 pub struct Spinlock<T: ?Sized> {
@@ -16,7 +12,8 @@ pub struct Spinlock<T: ?Sized> {
 /// An RAII implementation of a “scoped lock” of a spinlock.
 /// When this structure is dropped, the spinlock will be unlocked.
 ///
-/// The data protected by the spinlock can be accessed through this guard via its [Deref] and [DerefMut] implementations.
+/// The data protected by the spinlock can be accessed through this guard via its [Deref] and
+/// [DerefMut] implementations.
 pub struct SpinlockGuard<'a, T: ?Sized> {
     spinlock: &'a Spinlock<T>,
 }
