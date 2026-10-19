@@ -20,7 +20,7 @@ pub struct Mutex<T: ?Sized> {
 /// The data protected by the mutex can be accessed through this guard via its [Deref] and
 /// [DerefMut] implementations.
 pub struct MutexGuard<'a, T: ?Sized> {
-    mutex: &'a Mutex<T>,
+    pub(crate) mutex: &'a Mutex<T>,
 }
 
 impl<T> Mutex<T> {
