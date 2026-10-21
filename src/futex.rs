@@ -1,3 +1,5 @@
+//! See [Basic futex operation and ordering guarantees](https://github.com/torvalds/linux/blob/master/kernel/futex/waitwake.c)
+
 use std::io::Error;
 use std::sync::atomic::AtomicU32;
 use std::time::Duration;
