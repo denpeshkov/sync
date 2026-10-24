@@ -14,7 +14,7 @@ pub struct Mutex<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
-/// An RAII implementation of a “scoped lock” of a mutex.
+/// An RAII implementation of a "scoped lock" of a mutex.
 /// When this structure is dropped, the mutex will be unlocked.
 ///
 /// The data protected by the mutex can be accessed through this guard via its [Deref] and

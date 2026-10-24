@@ -9,7 +9,7 @@ pub struct Spinlock<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
-/// An RAII implementation of a “scoped lock” of a spinlock.
+/// An RAII implementation of a "scoped lock" of a spinlock.
 /// When this structure is dropped, the spinlock will be unlocked.
 ///
 /// The data protected by the spinlock can be accessed through this guard via its [Deref] and
