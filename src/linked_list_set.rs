@@ -36,7 +36,7 @@ impl<T: Ord> Set<T> {
     pub fn contains(&self, value: &T) -> bool {
         let prev_next = self.find(value);
         let curr = *prev_next;
-        // Safety: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
+        // SAFETY: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
         !curr.is_null() && unsafe { (*curr).value.eq(value) }
     }
 
@@ -45,7 +45,7 @@ impl<T: Ord> Set<T> {
     pub fn insert(&self, value: T) -> bool {
         let mut prev_next = self.find(&value);
         let curr = *prev_next;
-        // Safety: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
+        // SAFETY: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
         if !curr.is_null() && unsafe { (*curr).value.eq(&value) } {
             return false;
         }
@@ -58,14 +58,14 @@ impl<T: Ord> Set<T> {
     pub fn remove(&self, value: &T) -> bool {
         let mut prev_next = self.find(value);
         let curr = *prev_next;
-        // Safety: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
+        // SAFETY: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
         if curr.is_null() || unsafe { (*curr).value.ne(value) } {
             return false;
         }
-        // Safety: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
+        // SAFETY: We hold the lock on the slot pointing to `curr`, which keeps the node alive.
         let curr_next = unsafe { *(*curr).next.lock().unwrap() };
         *prev_next = curr_next;
-        // Safety: The node is now unreachable. The slot we hold locked was the only one pointing
+        // SAFETY: The node is now unreachable. The slot we hold locked was the only one pointing
         // to it, and no thread can hold or wait on its lock without going through that slot first.
         drop(unsafe { Box::from_raw(curr) });
         true
@@ -79,7 +79,7 @@ impl<T: Ord> Set<T> {
             if (*prev_next).is_null() {
                 return prev_next;
             }
-            // Safety: We hold the lock on the slot pointing to the node, and a node is unlinked
+            // SAFETY: We hold the lock on the slot pointing to the node, and a node is unlinked
             // from that slot before it is freed, so it cannot be freed under us.
             let curr = unsafe { prev_next.as_ref().unwrap() };
             if curr.value.ge(key) {
@@ -103,7 +103,7 @@ impl<T> Drop for Set<T> {
         // still guards a well-formed list, and dropping must not panic.
         let mut curr = *self.head.get_mut().unwrap_or_else(PoisonError::into_inner);
         while !curr.is_null() {
-            // Safety: Every node reachable from the head was allocated by `Node::new` and is
+            // SAFETY: Every node reachable from the head was allocated by `Node::new` and is
             // owned by the set, since unlinked nodes are freed on removal.
             let mut node = unsafe { Box::from_raw(curr) };
             curr = *node.next.get_mut().unwrap_or_else(PoisonError::into_inner);
