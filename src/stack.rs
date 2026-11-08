@@ -3,6 +3,7 @@ use std::ptr;
 use std::sync::atomic::Ordering;
 
 use crossbeam::epoch::{Atomic, Owned};
+use crossbeam::utils::Backoff;
 use crossbeam::*;
 
 /// Concurrent Treiber stack.
@@ -30,6 +31,7 @@ impl<T> Stack<T> {
             next: Atomic::null(),
         });
 
+        let backoff = Backoff::new();
         let guard = epoch::pin();
         loop {
             let head = self.head.load(Ordering::Relaxed, &guard);
@@ -45,7 +47,10 @@ impl<T> Stack<T> {
                 &guard,
             ) {
                 Ok(_) => break,
-                Err(err) => new_head = err.new,
+                Err(err) => {
+                    new_head = err.new;
+                    backoff.spin();
+                }
             }
         }
     }
@@ -53,6 +58,7 @@ impl<T> Stack<T> {
     /// Pops the top element from the stack.
     /// Returns [`None`] if the stack is empty.
     pub fn pop(&self) -> Option<T> {
+        let backoff = Backoff::new();
         let guard = epoch::pin();
         loop {
             // We need Acquire to establish happens-before from `push()` to `pop()`.
@@ -63,17 +69,21 @@ impl<T> Stack<T> {
             let head_ref = unsafe { head.as_ref()? };
             let new_head = head_ref.next.load(Ordering::Relaxed, &guard);
 
-            if self
-                .head
-                .compare_exchange_weak(head, new_head, Ordering::Relaxed, Ordering::Relaxed, &guard)
-                .is_ok()
-            {
-                // SAFETY: Successof the CAS makes us the owner of the value, and `defer_destroy()`
-                // frees the node only after threads that loaded it earlier are unpinned.
-                unsafe {
+            match self.head.compare_exchange_weak(
+                head,
+                new_head,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+                &guard,
+            ) {
+                Ok(_) => unsafe {
+                    // SAFETY: Success of the CAS makes us the owner of the value, and
+                    // `defer_destroy()` frees the node only after threads that loaded it earlier
+                    // are unpinned.
                     guard.defer_destroy(head);
                     return Some(ManuallyDrop::into_inner(ptr::read(&head_ref.value)));
-                }
+                },
+                Err(_) => backoff.spin(),
             }
         }
     }
