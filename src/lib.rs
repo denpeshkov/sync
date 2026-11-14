@@ -8,5 +8,6 @@ pub mod mutex;
 pub mod queue;
 pub mod spinlock;
 pub mod stack;
+pub mod thread_pool;
 #[cfg(target_os = "linux")]
 pub mod wait_group;
