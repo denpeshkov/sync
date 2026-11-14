@@ -52,7 +52,7 @@ pub fn wake_one(a: &AtomicU32) -> bool {
     r > 0
 }
 
-/// Wakes up all threads that are waiting on [wait] on this futex.4
+/// Wakes up all threads that are waiting on [wait] on this futex.
 pub fn wake_all(a: &AtomicU32) -> bool {
     let r = unsafe {
         libc::syscall(
